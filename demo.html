@@ -219,8 +219,8 @@
 			</div>
 		</div>
 
-		<script src="../convnetjs/build/convnet.js"></script>
-		<script src="trained.js"></script>
+		<script src="convnet.js"></script>
+		<script src="data/muchcommonequivfreqnoise28x10x30"></script>
 		<script src="http://ajax.googleapis.com/ajax/libs/webfont/1/webfont.js"></script> 
 
 		<script>
@@ -351,7 +351,7 @@
 				
 				image_data = o.getImageData(0, 0, c.width, c.height);
 				var gray = grayscale(image_data);
-				var contours = connected_img(mask(gray, 200))
+				var contours = connected_img(mask(gray, 110))
 				o.strokeStyle = 'red'
 
 
@@ -369,10 +369,12 @@
 						return a.cx - b.cx
 					}).forEach(function(metrics){
 						// o.strokeRect(metrics.x0, metrics.y0, metrics.width, metrics.height)
-
-						var vol = contour_to_vol(gray, metrics, c.width)
-						net.forward(vol)
-						blah += trained_symbols[net.getPrediction()][0]
+						// for(var angle = -0.1; angle < 0.1; angle += 0.01){
+							var angle = 0;
+							var vol = contour_to_vol(gray, metrics, c.width, angle)
+							net.forward(vol)
+							blah += trained_symbols[net.getPrediction()][0]	
+						// }
 					})
 					console.log(blah)
 				})
@@ -390,9 +392,9 @@
 			}
 
 
-			function contour_to_vol(gray, metrics, width){
+			function contour_to_vol(gray, metrics, width, angle){
 				var vol = new convnetjs.Vol(24,24,1,0.0);
-				var max_dim = Math.max(metrics.width, metrics.height) + 10;
+				var max_dim = Math.max(metrics.width, metrics.height) + 15;
 
 				var aleph = document.createElement('canvas')
 				aleph.width = max_dim;
@@ -419,14 +421,17 @@
 						x = p % width,
 						y = Math.floor(p / width);
 
-					ale.fillRect(x - metrics.cx + max_dim / 2, y - metrics.cy + max_dim / 2, 1, 1)
+					ale.fillRect(x - metrics.cx + max_dim / 2, y - metrics.cy + max_dim / 2, 2, 2)
 				// 	var px = 12 + 24 * (x - metrics.cx) / max_dim,
 				// 		py = 12 + 24 * (y - metrics.cy) / max_dim;
 
 				// 	ctx.fillRect(px, py, 1, 1)
 				// 	vol.w[Math.floor(px) + Math.floor(py) * 24] = 1;
 				}
+				ctx.fillRect(0, 0, zed.width, zed.height);
 
+				ctx.translate(0, 0)
+				ctx.rotate(angle)
 				ctx.drawImage(aleph, 0, 0, zed.width, zed.height)
 
 				var p = ctx.getImageData(0, 0, 24, 24).data;
@@ -657,7 +662,7 @@
 				"A true magician never unveils his trick.",
 				"Ceci n'est pas une pipe."
 			];
-			var fonts = ['Droid Sans', 'Philosopher', 'Alegreya Sans', 'Chango', 'Coming Soon', 'Allan', 'Cardo', 'Bubbler One', 'Bowlby One SC', 'Prosto One', 'Rufina', 'Cantora One', 'Denk One', 'Play', 'Architects Daughter', 'Nova Square', 'Inder', 'Gloria Hallelujah', 'Telex', 'Comfortaa', 'Merienda', 'Boogaloo', 'Krona One', 'Orienta', 'Sofadi One', 'Source Sans Pro', 'Revalia', 'Overlock', 'Kelly Slab', 'Rye', 'Butcherman', 'Lato', 'Milonga', 'Aladin', 'Princess Sofia', 'Audiowide', 'Italiana', 'Michroma', 'Cabin Condensed', 'Jura', 'Marko One', 'PT Mono', 'Bubblegum Sans', 'Amaranth']
+			var fonts = ['Droid Sans', 'Philosopher', 'Alegreya Sans', 'Chango', 'Coming Soon', 'Allan', 'Cardo', 'Bubbler One', 'Bowlby One SC', 'Prosto One', 'Rufina', 'Cantora One', 'Denk One', 'Play', 'Architects Daughter', 'Nova Square', 'Inder', 'Gloria Hallelujah', 'Telex', 'Comfortaa', 'Merienda', 'Boogaloo', 'Krona One', 'Orienta', 'Sofadi One', 'Source Sans Pro', 'Revalia', 'Overlock', 'Kelly Slab', 'Rye', 'Butcherman', 'Lato', 'Milonga', 'Aladin', 'Princess Sofia', 'Audiowide', 'Italiana', 'Michroma', 'Cabin Condensed', 'Jura', 'Marko One', 'PT Mono', 'Bubblegum Sans', 'Amaranth', 'Times New Roman']
 			
 
 			function fisher_yates(a) {
