@@ -181,6 +181,13 @@
 			<div class='footer'><div id='squish'>Hi. This was made by <a href="http://antimatter15.com">Kevin A-15</a>. Guillermo helped, but only about as much as I am big. I am a tiny footer, please don't <a href="javascript:void(document.getElementById('squish').className+='squish')">squish</a> me.</div>
 			</div>
 		</div>
+<script src="1grams.js"></script>
+<script src="2grams.js"></script>
+<script src="threegrams_end.js"></script>
+<script src="threegrams_start.js"></script>
+<script src="threegrams_middle.js"></script>
+<script src="grams.js"></script>
+
 
 		<script src="convnet.js"></script>
 		<script src="data/muchcommonequivfreqnoise28x10x30"></script>
@@ -326,12 +333,12 @@
 
 				blah = []
 
-				var tmp = document.createElement('canvas')
-				var tmpc = tmp.getContext('2d')
-				tmp.width = image_data.width
-				tmp.height = image_data.height
-				tmpc.putImageData(image_data,0,0)
-				console.image(tmp.toDataURL())
+				// var tmp = document.createElement('canvas')
+				// var tmpc = tmp.getContext('2d')
+				// tmp.width = image_data.width
+				// tmp.height = image_data.height
+				// tmpc.putImageData(image_data,0,0)
+				// console.image(tmp.toDataURL())
 
 				equivalence_classes(
 					contours.map(function(contour){
@@ -364,7 +371,7 @@
 							var subsize = j++
 							subletters.forEach(function(letter){
 								lettersizes[[letter.cx, letter.cy]] = [lettersize,subsize]
-								console.log(letter)
+								//console.log(letter)
 							})							
 						})
 
@@ -383,15 +390,18 @@
 						var type = 
 						o.fillText(lettersizes[[metrics.cx, metrics.cy]][0].toString(), metrics.x0, y0+20)
 
-						blah.push({
-							choices: trained_symbols[net.getPrediction()],
-							type: lettersizes[[metrics.cx, metrics.cy]]
-						})
+						
+						blah.push(trained_symbols[net.getPrediction()])
+						// blah.push({
+						// 	choices: trained_symbols[net.getPrediction()],
+						// 	type: lettersizes[[metrics.cx, metrics.cy]]
+						// })
 					})
 					console.log(blah)
+					console.log(fullword(blah))
 				})
+				//console.log(contours)
 
-				console.log(contours)
 
 			}
 
@@ -700,12 +710,14 @@
 						o.font = '30px "' + font + '"'
 						var words = phrase.split(' '), buf = [], n = 70;
 						for(var i = 0; i < words.length; i++){
-							buf.push(words[i])
-							if(buf.join(' ').length > 15 || i == words.length - 1){
-								o.fillText(buf.join(' '), 50, n);
-								buf = []
-								n += 50
-							}
+							//buf.push(words[i])
+							//if(buf.join(' ').length > 15 || i == words.length - 1){
+								// o.fillText(buf.join(' '), 50, n);
+								//buf = []
+								// n += 50
+							// }
+							o.fillText(words[i], 50, n);
+							n+=50
 						}
 						runOCR(phrase);
 					}
