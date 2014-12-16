@@ -1,0 +1,145 @@
+
+<script src="jquery-1.8.3.min.js"></script>
+<script src="vis.js"></script>
+<script src="util.js"></script>
+<script src="../convnet.js"></script>
+
+<style>
+pre {
+	background: white;
+	padding: 10px;
+	border: 1px solid gray;
+}
+canvas {
+	border: 1px solid gray;
+	background: white;
+}
+body {
+	background: whiteSmoke;
+}
+
+#crop {
+	width: 96px;
+	image-rendering: pixelated;
+}
+#blah {
+	background: black;
+}
+#pred {
+	font-size: 150px;
+}
+</style>
+<pre id="info"></pre>
+<canvas id="blah" width="1000" height="200"></canvas>
+<canvas id="crop" width="24" height="24"></canvas>
+<span id="pred"></span>
+<script src="../data2/dec14windowed-fullalpha+m+num+symbol+ext-tight-full-run-15"></script>
+
+
+<div id="out"></div>
+<script>
+document.getElementById('info').innerText = JSON.stringify(trained_info, '', '  ')
+var c = document.getElementById('blah')
+var ctx = c.getContext('2d')
+
+ctx.font = '100 45px "Impact"'
+ctx.fillStyle = 'white'
+// ctx.fillText('The white knight approaches.', 30, 100)
+// ctx.fillText('(Dem)ocracy OCR <3 U', 30, 100)
+// ctx.fillText('It matters not how strait the gate, how charged with punishments the scroll', 30, 100)
+// ctx.fillText('IT is a truth universally acknowledged...', 30, 100)
+// ctx.fillText('The Quick Brown Fox Jumps Over Such Lazy Doge.', 30, 100)
+// ctx.fillText('I wish that one day the sun will engulf the world', 30, 100)
+// ctx.fillText('24% Alcohol! $42/oz', 30, 100)
+// ctx.fillText('He who recieves an idea from me receives instruction without lessening mine', 30, 100)
+ctx.fillText('There\'s a storm coming, Mr. Wayne.', 30, 100)
+
+var book = new Image()
+book.src = c.toDataURL('image/png')
+
+var crop = document.getElementById('crop')
+var cropx = crop.getContext('2d');
+
+var DIM = 24;
+var shift = 0;
+var scale = 0.5;
+function extract(){
+	cropx.fillRect(0, 0, 24, 24)
+	cropx.drawImage(book, -shift, -29, c.width * scale, c.height * scale)
+	// var t = cropx.getImageData(0, 0, DIM, DIM);
+	// for(var i = 0; i < t.data.length; i++){
+	// 	t.data[i] = Math.min(255, t.data[i] * 1.8)
+	// }
+	// cropx.putImageData(t, 0, 0)
+	var p = cropx.getImageData(0, 0, DIM, DIM).data;
+	var x = new convnetjs.Vol(DIM, DIM, 1, 0);
+	var W = DIM * DIM;
+	for(var i = 0; i < W; i++) {
+		x.w[i] = p[i * 4] / 255.0;
+	}
+	return x;
+}
+function blah(){
+	net = new convnetjs.Net();
+	net.fromJSON(trained_network);
+	// var result = net.forward(extract());
+	// for(var i = 0, sum = 0; i < result.w.length; i++){
+	// 	sum += result.w[i]
+	// }
+
+	var sx = extract()
+	// forward prop it through the network
+    var aavg = new convnetjs.Vol(1,1,trained_symbols.length,0.0);
+    // ensures we always have a list, regardless if above returns single item or list
+    var xs = [].concat(sx);
+    var n = xs.length;
+    for(var i=0;i<n;i++) {
+      var a = net.forward(xs[i]);
+      aavg.addFrom(a);
+    }
+    var preds = [];
+    
+    for(var k=0;k<aavg.w.length;k++) {
+      preds.push({
+        k:k,
+        p:aavg.w[k]
+      }); 
+    }
+    // console.log(preds)
+    preds.sort(function(a,b){return a.p<b.p ? 1:-1;});
+
+
+	// console.log(preds)
+
+	var pred = trained_symbols[net.getPrediction()];
+
+	ctx.font = '13px "Lato"'
+	ctx.fillStyle = 'rgba(255, 255, 255, ' + preds[0].p + ')'
+    ctx.fillText(pred, shift / scale + 24, 120 + (shift % 5) * 10 )
+	document.getElementById('pred').innerText = pred;
+
+	var img = new Image();
+	img.src = crop.toDataURL('image/png')
+	// document.body.appendChild(img)
+	var d = document.createElement('span')
+	d.style.opacity = preds[0].p;
+	d.appendChild(document.createTextNode(pred))
+	// d.appendChild(img)
+	// if(preds[0].p > 0.5){
+		document.getElementById('out').appendChild(d)	
+	// }
+	
+}
+blah()
+
+setInterval(function(){
+	if(shift < 400){
+
+		shift++
+		blah()	
+	}
+}, 10)
+// net.forward(vol)
+// blah += trained_symbols[net.getPrediction()][0]	
+extract()
+</script>

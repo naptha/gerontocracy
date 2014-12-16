@@ -1,0 +1,37 @@
+<script src="../convnet.js"></script>
+<script src="generate.js"></script>
+<style>
+	img {
+		margin: 1px;
+		width: 48px;
+		image-rendering: pixelated;
+	}
+	body {
+		background: gray;
+	}
+</style>
+<script>
+
+function render_sample(data){
+	var im = ctx.createImageData(DIM, DIM);
+	var W = DIM * DIM;
+	for(var i = 0; i < W; i++) {
+		im.data[i * 4] = im.data[i * 4 + 1] = im.data[i * 4 + 2] = data.x.w[i] * 255;
+		im.data[i * 4 + 3] = 255;
+	}
+	ctx.putImageData(im, 0, 0);
+	var im = new Image()
+	im.src = canvas.toDataURL('image/png');
+	im.title = data.font;
+	return im;
+
+}
+
+
+onload = function(){
+	for(var i = 0; i < 1000; i++){
+		document.body.appendChild(render_sample(sample_training_instance()))		
+	}
+	
+}
+</script>
