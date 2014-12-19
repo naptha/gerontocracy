@@ -1,6 +1,5 @@
 var fonts = [
 	// 'sans-serif', 'Times New Roman', 'Verdana', 'Arial', 'Helvetica', 'Helvetica Neue'
-
 	'Comic Sans MS', 'Comic Neue','Chalkboard', 'Comic Neue Angular', 'Tekton Pro',
 	'Arial Black', 'Impact',
 	'sans-serif', 'Helvetica', 'Helvetica Neue', 'Arial', 'Verdana', 'Source Sans Pro', 'Arial Narrow', 'Avenir', 'Avenir Next', 'Gill Sans', 'Lucida Grande', 'Myriad Pro', 'Segoe UI', 'Tahoma', 'Trebuchet MS',
@@ -14,19 +13,19 @@ var fonts = [
 	'Courier', 'Courier New', 'DIN Alternate', 'DIN Condensed',
 	'Kozuka Gothic Pro', 'Kozuka Mincho Pro', 'Letter Gothic Std', 'Marker Felt', 'Monaco',
 	'Noteworthy', 'Optima', 'Prestige Elite Std', 'PT Serif', 'Seravek', 'Skia',
-	'Superclarendon', 'Thonburi', 'Adobe Caslon Pro', 'Adobe Arabic', 'Adobe Song Std', 'Adobe Fangsong Std', 'Adobe Garamond Pro', 'Adobe Gothic Std', 
+	'Superclarendon', 'Thonburi', 'Adobe Caslon Pro',  'Adobe Song Std', 'Adobe Fangsong Std', 'Adobe Garamond Pro', 'Adobe Gothic Std', 
 	'Aaargh', 'Alegreya Sans', 'Aller', 'Aller Light', 'Caviar Dreams', 'Existence', 'Josefin Sans', 'Lato', 'Open Sans', 'Quicksand', 'Roboto', 'Roboto Condensed', 'Source Code Pro', 'Source Serif Pro', 'Ubuntu', 'Ubuntu Condensed', 'Ubuntu Mono', 'Ubuntu Titling'
 ];
 // fonts = ['Iowan Old Style']
 // fonts = ['Arial Black', 'Impact']
-var symbols = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789,.!?():;&%$@#+-=*<>{}[]/"\''.split('');
-var charset = "fullalpha+m+num+symbol+ext-tight-full";
+var symbols = ' abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789,.!?():;&%$@#+-=*<>{}[]/"\''.split('');
+var charset = "space-fullalpha+num+symbol+ext-tight-full";
 
 var DIM = 24;
 var canvas = document.createElement('canvas');
 canvas.width = canvas.height = DIM;
 var ctx = canvas.getContext('2d');
-ctx.textBaseline = 'bottom';
+ctx.textBaseline = 'alphabetic';
 ctx.textAlign = 'center';
 
 function r(range){ return 2 * (Math.random() - 0.5) * range }
@@ -40,22 +39,28 @@ function sample_training_instance(){
 	ctx.fillStyle = 'black'
 	ctx.fillRect(0, 0, DIM, DIM);
 	ctx.fillStyle = 'white'
-	ctx.font = (100 * Math.floor(1 + 3 * Math.random())) + ' ' + (22 + r(2))+'px "'+fonfam+'"'
+	ctx.font = (100 * Math.floor(1 + 4 * Math.random())) + ' ' + (20 + r(2))+'px "'+fonfam+'"'
+
 
 	ctx.save()
-	ctx.translate(24 / 2 + r(4), 24);
-	// ctx.rotate(r(0.1))
-	ctx.letterSpacing = 4
 
 	var w = ctx.measureText(symbols[label]).width,
 		wa = ctx.measureText(symbols[pre]).width,
 		wb = ctx.measureText(symbols[post]).width;
 
 	var baseline = 2 * Math.random();
+	ctx.translate(24 / 2 + r(w / 3), 19);
 
 	ctx.fillText(symbols[label],  0,                                  r(0.1) + baseline);
 	ctx.fillText(symbols[pre],   -(w + wa - 2 + 6 * Math.random())/2, r(0.1) + baseline);
 	ctx.fillText(symbols[post],   (w + wb - 2 + 6 * Math.random())/2, r(0.1) + baseline);
+
+	// ctx.fillStyle = 'black'
+	// ctx.lineWidth = 2
+	// ctx.strokeText(symbols[label],  0,                                  r(0.1) + baseline);
+	// ctx.strokeText(symbols[pre],   -(w + wa - 2 + 6 * Math.random())/2, r(0.1) + baseline);
+	// ctx.strokeText(symbols[post],   (w + wb - 2 + 6 * Math.random())/2, r(0.1) + baseline);
+	
 	ctx.restore()
 
 	var p = ctx.getImageData(0, 0, DIM, DIM).data;

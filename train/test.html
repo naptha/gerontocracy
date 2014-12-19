@@ -2,6 +2,7 @@
 <script src="jquery-1.8.3.min.js"></script>
 <script src="vis.js"></script>
 <script src="util.js"></script>
+<script src="stackblur.js"></script>
 <script src="../convnet.js"></script>
 
 <style>
@@ -33,7 +34,7 @@ body {
 <canvas id="blah" width="1000" height="200"></canvas>
 <canvas id="crop" width="24" height="24"></canvas>
 <span id="pred"></span>
-<script src="../data2/dec14windowed-fullalpha+m+num+symbol+ext-tight-full-run-15"></script>
+<script src="../data2/dec18windowed-space-fullalpha+num+symbol+ext-tight-full-run-23"></script>
 
 
 <div id="out"></div>
@@ -42,7 +43,7 @@ document.getElementById('info').innerText = JSON.stringify(trained_info, '', '  
 var c = document.getElementById('blah')
 var ctx = c.getContext('2d')
 
-ctx.font = '100 45px "Impact"'
+ctx.font = '100 45px "Arial"'
 ctx.fillStyle = 'white'
 // ctx.fillText('The white knight approaches.', 30, 100)
 // ctx.fillText('(Dem)ocracy OCR <3 U', 30, 100)
@@ -54,6 +55,7 @@ ctx.fillStyle = 'white'
 // ctx.fillText('He who recieves an idea from me receives instruction without lessening mine', 30, 100)
 ctx.fillText('There\'s a storm coming, Mr. Wayne.', 30, 100)
 
+stackBlurCanvasRGBA('blah')
 var book = new Image()
 book.src = c.toDataURL('image/png')
 
@@ -63,6 +65,56 @@ var cropx = crop.getContext('2d');
 var DIM = 24;
 var shift = 0;
 var scale = 0.5;
+
+// var sharp = ctx.getImageData(0, 50, 800, 70);
+// var data = stackBlurCanvasRGB(ctx.getImageData(0, 50, 800, 70), 20)
+// for(var i = 0; i < sharp.data.length; i++){
+// 	data.data[i] += sharp.data[i]
+// }
+// var output = ctx.createImageData(data.width, data.height)
+
+// var energies = new Uint32Array(data.width * data.height);
+// for(var j = 0; j < data.height; j++){
+// 	for(var i = 1; i < data.width; i++){
+// 		var start = Math.min(energies[j * data.width + i - 1],
+// 					energies[j * data.width + i],
+// 					energies[j * data.width + i + 1]);
+// 		energies[(j + 1) * data.width + i] = start + data.data[4 * (j * data.width + i)];
+// 		output.data[4 * (j * data.width + i)] = energies[(j + 1) * data.width + i] / 10
+// 		output.data[4 * (j * data.width + i) + 3] = 255
+// 	}
+// }
+// ctx.putImageData(output, 0, 0)
+
+
+var data = stackBlurCanvasRGB(ctx.getImageData(0, 50, 800, 70), 2);
+var hist = new Uint32Array(data.width)
+for(var i = 0; i < data.width; i++){
+	var s = 0;
+	for(var j = 0; j < data.height; j++) s += data.data[4 * (j * data.width + i)];
+	hist[i] = s;
+}
+var r = 20;
+for(var i = r; i < data.width - r; i++){
+	var s = 0;
+	for(var d = -r; d < r; d++){
+		// s += hist[i + d]
+		s = Math.max(s, hist[i + d])
+	}
+	// if(hist[i] == s && s > 0){
+	// 	ctx.fillStyle = 'red'	
+	// 	ctx.fillRect(i, 0, 1, 20)
+	// 	shift = i * scale
+	// 	blah()
+	// }
+	// ctx.fillStyle = 'red'
+	// ctx.fillRect(i, 0, 1, s / (r * 2) / 10)
+}
+
+
+
+// ctx.putImageData(data, 0, 0)
+
 function extract(){
 	cropx.fillRect(0, 0, 24, 24)
 	cropx.drawImage(book, -shift, -29, c.width * scale, c.height * scale)
@@ -79,9 +131,11 @@ function extract(){
 	}
 	return x;
 }
+
+net = new convnetjs.Net();
+net.fromJSON(trained_network);
+
 function blah(){
-	net = new convnetjs.Net();
-	net.fromJSON(trained_network);
 	// var result = net.forward(extract());
 	// for(var i = 0, sum = 0; i < result.w.length; i++){
 	// 	sum += result.w[i]
@@ -112,6 +166,9 @@ function blah(){
 	// console.log(preds)
 
 	var pred = trained_symbols[net.getPrediction()];
+	
+	ctx.fillStyle = 'red'
+	ctx.fillRect(shift / scale + 24, 0, 1, 10 * (preds[0].p))
 
 	ctx.font = '13px "Lato"'
 	ctx.fillStyle = 'rgba(255, 255, 255, ' + preds[0].p + ')'
@@ -130,11 +187,49 @@ function blah(){
 	// }
 	
 }
+
+
+function blahfast(){
+	// var result = net.forward(extract());
+	// for(var i = 0, sum = 0; i < result.w.length; i++){
+	// 	sum += result.w[i]
+	// }
+
+	var sx = extract()
+	// console.log(preds)
+	net.forward(sx)
+	var pred = trained_symbols[net.getPrediction()];
+	
+	ctx.fillStyle = 'white'
+
+	ctx.font = '13px "Lato"'
+    ctx.fillText(pred, shift / scale + 24, 120 + (shift % 5) * 10 )
+	document.getElementById('pred').innerText = pred;
+
+	var img = new Image();
+	img.src = crop.toDataURL('image/png')
+	// document.body.appendChild(img)
+	var d = document.createElement('span')
+	d.appendChild(document.createTextNode(pred))
+	// d.appendChild(img)
+	// if(preds[0].p > 0.5){
+		document.getElementById('out').appendChild(d)	
+	// }
+	
+}
 blah()
 
+// setTimeout(function(){
+// 	// ocr400: 2117.558ms
+// 	// ocrfast: 1774.457ms
+// 	console.time("ocrfast")
+// 	while(shift++ < 400){
+// 		blahfast()
+// 	}
+// 	console.timeEnd("ocrfast")
+// }, 100)
 setInterval(function(){
 	if(shift < 400){
-
 		shift++
 		blah()	
 	}
