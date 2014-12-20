@@ -1,0 +1,43 @@
+<script src="fonts.js"></script>
+<script>
+
+var c = document.createElement('canvas');
+var ctx = c.getContext('2d')
+console.log(ctx.measureText('hello'))
+
+function measureHash(x){
+	return [
+		x.width,
+		x.actualBoundingBoxAscent,
+		x.actualBoundingBoxDescent,
+		x.actualBoundingBoxLeft,
+		x.actualBoundingBoxRight,
+		x.fontBoundingBoxAscent,
+		x.fontBoundingBoxDescent,
+		x.hangingBaseline,
+		x.ideographicBaseline
+	].join(',')
+}
+
+onload = function(){
+fonts.forEach(function(font){
+	// ctx.font = 'italic small-caps bold 12px arial'
+	var size = '20px';
+	ctx.font = size + ' "' + font + '"';
+	var normalTest = "theQuickBrownFoxJumpsOverSuchLazyDoge";
+	var normal = measureHash(ctx.measureText(normalTest));
+	var allCaps = measureHash(ctx.measureText(normalTest.toUpperCase()));
+	var allLower = measureHash(ctx.measureText(normalTest.toLowerCase()));
+	if(allCaps != allLower && allCaps != normal && allLower != normal){
+		// console.log(font)
+		var span = document.createElement("span")
+		span.style.fontFamily = font;
+		span.innerText = font + " The Quick Brown Fox jumps over the lazy dog ";
+		document.body.appendChild(span)
+	}else{
+		console.log(font)
+	}
+})
+}
+</script>
+
