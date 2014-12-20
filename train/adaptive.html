@@ -403,6 +403,7 @@ var test_predict = function() {
     }
     probsdiv.innerHTML = t;
     div.appendChild(probsdiv);
+    div.appendChild(document.createTextNode(sample.font + ': ' + symbols[sample.label]))
 
     // add it into DOM
     $("#testset_acc").append(div).fadeIn(1000);
