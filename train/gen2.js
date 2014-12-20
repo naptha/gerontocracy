@@ -70,7 +70,7 @@ var s = 16 / m.actualBoundingBoxAscent
 dtx.fillStyle = 'black'
 dtx.fillRect(0, 0, d.width, d.height)
 
-if(Math.random() < 0.95){
+if(Math.random() < 0.97){
 	dtx.drawImage(c, -100 * s + 12 + r(Math.min(w * s / 4, 22 - w * s)), 0, c.width * s, c.height * s)	
 }else{
 	label = 0; // space!
@@ -93,7 +93,7 @@ return {
 }
 
 
-var charset = "space-fullalpha+num+symbol+ext-tight-full";
+var charset = "ascii-resized";
 
 
 function sample_training_instance(){
