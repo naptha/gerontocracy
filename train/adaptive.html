@@ -102,8 +102,16 @@ body {
 <script src="vis.js"></script>
 <script src="util.js"></script>
 <script src="../convnet.js"></script>
-
-<script src="generate.js"></script>
+<script>
+var c = document.createElement('canvas')
+var d = document.createElement('canvas')
+c.width = 500
+var DIM = 24;
+d.width = DIM
+d.height = DIM
+</script>
+<script src="fonts.js"></script>
+<script src="gen2.js"></script>
 <script>
 
 var startTime = Date.now()

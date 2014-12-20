@@ -43,7 +43,7 @@ document.getElementById('info').innerText = JSON.stringify(trained_info, '', '  
 var c = document.getElementById('blah')
 var ctx = c.getContext('2d')
 
-ctx.font = '100 45px "Arial"'
+ctx.font = '200 40px "Lato"'
 ctx.fillStyle = 'white'
 // ctx.fillText('The white knight approaches.', 30, 100)
 // ctx.fillText('(Dem)ocracy OCR <3 U', 30, 100)
@@ -117,7 +117,7 @@ for(var i = r; i < data.width - r; i++){
 
 function extract(){
 	cropx.fillRect(0, 0, 24, 24)
-	cropx.drawImage(book, -shift, -29, c.width * scale, c.height * scale)
+	cropx.drawImage(book, -shift, -30, c.width * scale, c.height * scale)
 	// var t = cropx.getImageData(0, 0, DIM, DIM);
 	// for(var i = 0; i < t.data.length; i++){
 	// 	t.data[i] = Math.min(255, t.data[i] * 1.8)
