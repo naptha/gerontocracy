@@ -3,13 +3,52 @@ var symbols = ' abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789,.
 var ctx = c.getContext('2d')
 var dtx = d.getContext('2d')
 
+var fonts = ["Adobe Garamond Pro",
+"Arial",
+"Arial Black",
+"Arimo",
+"Avenir",
+"Avenir Next",
+"Clear Sans",
+"Comic Sans MS",
+"Courier",
+"Courier New",
+"DejaVu Sans",
+"DejaVu Sans Mono",
+"Droid Sans",
+"Futura",
+"Geneva",
+"Georgia",
+"Helvetica",
+"Helvetica Neue",
+"Impact",
+"Lato",
+"Lucida Grande",
+"Menlo",
+"Monaco",
+"Myriad Pro",
+"Open Sans",
+"PT Mono",
+"PT Sans",
+"PT Serif",
+"Roboto",
+"Roboto Condensed",
+"Segoe UI",
+"Source Sans Pro",
+"Source Serif Pro",
+"Tahoma",
+"Times",
+"Times New Roman",
+"Trebuchet MS",
+"Verdana",
+];
 
 function gen(){
 var fonfam = fonts[Math.floor(fonts.length * Math.random())]
 // fonfam = 'Marion'
 // fonfam  = 'Raanana'
 var size = (9 + 70 * Math.random())
-ctx.font = '800 ' + size +'px ' + '"' +  fonfam + '"'
+ctx.font = (100 * Math.floor(1 + 7 * Math.random())) + ' ' + size +'px ' + '"' +  fonfam + '"'
 
 var label = Math.floor(symbols.length * Math.random())
 var pre = Math.floor(symbols.length * Math.random()),
@@ -70,16 +109,16 @@ var s = 16 / m.actualBoundingBoxAscent
 dtx.fillStyle = 'black'
 dtx.fillRect(0, 0, d.width, d.height)
 
-if(Math.random() < 0.97){
-	dtx.drawImage(c, -100 * s + 12 + r(Math.min(w * s / 4, 22 - w * s)), 0, c.width * s, c.height * s)	
-}else{
-	label = 0; // space!
-	if(Math.random() < 0.5){
-		dtx.drawImage(c, -100 * s + 12 - (w * s / 2 + (postgap / 2 * s) * Math.random()), 0, c.width * s, c.height * s)
-	}else{
-		dtx.drawImage(c, -100 * s + 12 - (w * s / 2 + (postgap / 2 * s) * Math.random()), 0, c.width * s, c.height * s)	
-	}
-}
+// if(Math.random() < 0.97){
+	dtx.drawImage(c, -100 * s + 12 + r(Math.min(w * s / 4, 22 - w * s)), r(4), c.width * s, c.height * s)	
+// }else{
+// 	label = 0; // space!
+// 	if(Math.random() < 0.5){
+// 		dtx.drawImage(c, -100 * s + 12 - (w * s / 2 + (postgap / 2 * s) * Math.random()), 0, c.width * s, c.height * s)
+// 	}else{
+// 		dtx.drawImage(c, -100 * s + 12 - (w * s / 2 + (postgap / 2 * s) * Math.random()), 0, c.width * s, c.height * s)	
+// 	}
+// }
 
 
 // dtx.fillStyle = 'green'
@@ -93,7 +132,7 @@ return {
 }
 
 
-var charset = "ascii-resized";
+var charset = "ascii-resized-common-noise";
 
 
 function sample_training_instance(){
@@ -103,6 +142,9 @@ function sample_training_instance(){
 	var W = DIM * DIM;
 	for(var i = 0; i < W; i++) {
 		x.w[i] = p[i * 4]/255.0;
+		if(Math.random() < 0.05){
+			x.w[i] = Math.random();
+		}
 	}
 	return {
 		x: x,

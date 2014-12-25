@@ -25,7 +25,7 @@ var fonts = ["Aaargh",
 // "Alegreya Sans SC",
 // "Alegreya SC",
 "Aller",
-"Aller Display",
+// "Aller Display",
 "Aller Light",
 "Amaranth",
 "Amble",
@@ -332,3 +332,4 @@ var boldfonts = [
 "BPreplay",
 "Source Code Pro"
 ]
+

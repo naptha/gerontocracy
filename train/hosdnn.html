@@ -93,23 +93,26 @@ for(var i = 0; i < data.width; i++){
 	var s = 0;
 	for(var j = 0; j < data.height; j++) s += data.data[4 * (j * data.width + i)];
 	hist[i] = s;
+	ctx.fillRect(i, 0, 1, Math.sqrt(s))
 }
-var r = 20;
-for(var i = r; i < data.width - r; i++){
-	var s = 0;
-	for(var d = -r; d < r; d++){
-		// s += hist[i + d]
-		s = Math.max(s, hist[i + d])
-	}
-	// if(hist[i] == s && s > 0){
-	// 	ctx.fillStyle = 'red'	
-	// 	ctx.fillRect(i, 0, 1, 20)
-	// 	shift = i * scale
-	// 	blah()
-	// }
-	// ctx.fillStyle = 'red'
-	// ctx.fillRect(i, 0, 1, s / (r * 2) / 10)
-}
+// var r = 1;
+// for(var i = r; i < data.width - r; i++){
+// 	var s = 0;
+// 	for(var d = -r; d < r; d++){
+// 		// s += hist[i + d]
+// 		s = Math.max(s, hist[i + d])
+// 	}
+// 	// if(hist[i] == s && s > 0){
+// 	// 	ctx.fillStyle = 'red'	
+// 	// 	ctx.fillRect(i, 0, 1, 20)
+// 	// 	shift = i * scale
+// 	// 	blah()
+// 	// }
+// 	ctx.fillStyle = 'red'
+// 	ctx.fillRect(i, 0, 1, s / (r * 2 + 1) / 30)
+// }
+
+
 
 
 
@@ -188,35 +191,6 @@ function blah(){
 	
 }
 
-
-function blahfast(){
-	// var result = net.forward(extract());
-	// for(var i = 0, sum = 0; i < result.w.length; i++){
-	// 	sum += result.w[i]
-	// }
-
-	var sx = extract()
-	// console.log(preds)
-	net.forward(sx)
-	var pred = trained_symbols[net.getPrediction()];
-	
-	ctx.fillStyle = 'white'
-
-	ctx.font = '13px "Lato"'
-    ctx.fillText(pred, shift / scale + 24, 120 + (shift % 5) * 10 )
-	document.getElementById('pred').innerText = pred;
-
-	var img = new Image();
-	img.src = crop.toDataURL('image/png')
-	// document.body.appendChild(img)
-	var d = document.createElement('span')
-	d.appendChild(document.createTextNode(pred))
-	// d.appendChild(img)
-	// if(preds[0].p > 0.5){
-		document.getElementById('out').appendChild(d)	
-	// }
-	
-}
 blah()
 
 // setTimeout(function(){
