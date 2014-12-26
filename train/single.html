@@ -9,14 +9,23 @@
 
 
 <style>
+#visnet {
+  display: flex;
+  flex-wrap: wrap;
+  /*align-items: center;*/
+  justify-content: center;
+}
 .layer {
   border: 1px solid #999;
   margin-bottom: 5px;
   text-align: left;
   padding: 10px;
+  display: block;
+  width: 600px;
+  margin: 5px;
 }
 .layer_act {
-  width: 500px;
+  width: 400px;
   float: right;
 }
 .ltconv {
@@ -78,7 +87,7 @@ h1 {
 }
 .probsdiv {
   height: 60px;
-  width: 180px;
+  width: 200px;
   display: inline-block;
   font-size: 12px;
   box-shadow: 0px 0px 2px 2px #EEE;
@@ -89,6 +98,7 @@ h1 {
 .pp {
   margin: 1px;
   padding: 1px;
+  margin-left: 85px; 
 }
 #testset_acc {
   margin-bottom: 200px;
@@ -112,6 +122,7 @@ d.height = DIM
 </script>
 <script src="fonts.js"></script>
 <script src="single.js"></script>
+<div id="blah"></div>
 <script>
 
 var startTime = Date.now()
@@ -127,7 +138,7 @@ if(localStorage.ocracy_runs) runs = parseInt(localStorage.ocracy_runs) || 0;
 localStorage.ocracy_runs = ++runs;
 
 setInterval(function(){
-  var name = "single-" + charset + "-run-" + runs;
+  var name = "rbf-" + charset + "-run-" + runs;
 
   var trained_info  = {
     name: name,
@@ -142,6 +153,59 @@ setInterval(function(){
 
 // var symbols = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLNOPQRSTUVWXYZ0123456789'.split('')
 
+var symbols = " !”#$%&’()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~";
+           // " !”#$%&’()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~"
+
+var volumes = []
+
+
+;(function(){
+var rbf = new Image()
+rbf.src = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAqAAAAAMCAYAAAC9fQ95AAAEFElEQVR42u1dy3LDIAz0//90e+1kaqN9gXDwTC9xYgNipUUr6PVTvK7r+rmu6/az/+6PnvX37/Pzp3fcvWt0X2131+tuPKv2e7JD9X61LbPft5ON0N85743+2PeN/MYTbtH5WcHzrPFU+rACm7PvoT4b+T7jA9h2OH1D93Yiz+zuj2fZ6219cvf9Uhr45PgrQejTWdx9NiKmyMSvBESHQ+sEAoczcEw8l6OtBLxO4Kxi565Pd7hxB8Cn9ldIk4I3BLMovndx+Gjb37R4ZgmOy9exC8OV/kUZJ+R7zHvfStTe2C8kbqHYG87PbgT07ndOAlr5/PPdrqDhJgyjfiNETg3q1UxaioA6yI3qbNA2oWOWyPYyykFqPA4BPQSUnYuKsrUjAZ317ENA39sv1pciqtp0AqrIRNVJj7Jz5h4rba8in8i4KMSgKqGq2c+qXdi2ucoWlAyOWsKAyuzIMxj8sOOjBH9Ggq/6rJFdWDsoWXEG06vusVhB/UmK0Lvtztxj8Vf1VyppUZWflfhTSkuY+bML/hgCyizmJAKqZMKe6j4ZY6rZLNQRKnKkIzPoII3oqsZBQBO1qlVbOeUHZS4yCzfVaTIrV5QsKHMelXVQZQT1S4p6oARDx0KwQwBUcbYq052qIUbwh2Z1EfKL+E0l4cH4mlX4cxG7HfHnxiyMt1TauUoUlOCfTDePiPLuBDTheKvgdwXVWSv8pMz6X6kHsvBB8aH+bkSYEvOTCRQVn9QtQ6HaMhXI3ES5MwF1ZPad+FMXLLPxh/q6TuQtQfI6409RLW2xdnYG1AUQB3lLGim1M9sd4FnyjDooB9l0ByZVRmfm2q4EtNqnhAT/ZgLqVHwcbUHUBRbTuxDQVfhDT3g4BNRPQFGs7oi/rQioa9X4KQFXsiloPYzL2bmk1mQ7nbWcCbLGEFc3AWVtlKwBVclbdwJaIdGOOa9uUOpMQJVsetU2I2KAZGDQI7EOAfXjrxK3kvibnaFPEtAKjpBx7Yg/tD9u7E2X4NGia4T9p4jdrJ2VCHhUcLicJLNpJp3NZbJIah0TSyRc9bDsgqn6G8VRpXfBI/M/KaW7saIS0GqphLJxQT31wrk4TBPQWTXYqG9H7ZDE3yoC6sCfQiQrZWe74i+5AGxRA4oyekXeZg4vZgfaWauK1Oih8o7jQGvnIfUV56pmHRAbOY8dUXa2I99VdsEzh7wrAdBZV5rYJFDxWR12waPtQTM1jOKhqgWpEhmHmtdpF7xDeXLWdbtrVWfgD1E/HRuduuOvFQFNAFshdwlZJf2eTs/r3NfT7nNVpPwd51CHfiTPr3QqPhUiopLIt2HFNc8O/r4Df0gGOzGGXxl93/avOA+RO9db51R3wvCNh8cjmaJz7WmHg7/vsvuqfy7wC4rGYK0Z/ot2AAAAAElFTkSuQmCC";
+
+
+
+
+var c = document.createElement('canvas')
+c.width = 7
+c.height = 12
+var x = c.getContext('2d')
+
+// document.getElementById('blah').appendChild(rbf)
+console.log(symbols.length)
+for(var i = 0; i < symbols.length; i++){
+  x.drawImage(rbf, -i * 7, 0)
+
+  var things = x.getImageData(0, 0, 7, 12);
+  
+  var netx = new convnetjs.Vol(7,12,1,0);
+
+  for(var a = 0; a < 12; a++){
+    for(var b = 0; b < 7; b++){
+      var n = a * 7 + b;
+      if(things.data[4 * n] > 128){
+        netx.w[n] = -1
+      }else{
+        netx.w[n] = 1
+      }
+    }
+  }
+
+  // console.log(netx)
+  
+  volumes[i] = netx;
+
+  var s = new Image;
+  s.src = c.toDataURL('image/png')
+  s.style.border = '1px solid gray'
+  s.style.margin = '2px'
+  document.getElementById('blah').appendChild(s)
+}
+
+
+
+})();
+
 
 var t = "layer_defs = [];\n\
 layer_defs.push({type:'input', out_sx:24, out_sy:24, out_depth:1});\n\
@@ -149,7 +213,9 @@ layer_defs.push({type:'conv', sx:5, filters:8, stride:1, pad:2, activation:'relu
 layer_defs.push({type:'pool', sx:2, stride:2});\n\
 layer_defs.push({type:'conv', sx:5, filters:18, stride:1, pad:2, activation:'relu'});\n\
 layer_defs.push({type:'pool', sx:5, stride:2});\n\
-layer_defs.push({type:'softmax', num_classes:"+symbols.length+"});\n\
+//layer_defs.push({type:'fc', num_neurons:20, activation:'sigmoid'});\n\
+layer_defs.push({type:'regression', num_neurons:7*12});\n\
+//layer_defs.push({type:'softmax', num_classes:"+symbols.length+"});\n\
 \n\
 net = new convnetjs.Net();\n\
 net.makeLayers(layer_defs);\n\
@@ -262,6 +328,70 @@ var draw_activations = function(elt, A, scale, grads) {
   }  
 }
 
+
+
+var draw_image_activations = function(elt, A, scale, grads) {
+
+  var s = scale || 2; // scale
+  var draw_grads = false;
+  if(typeof(grads) !== 'undefined') draw_grads = grads;
+
+  // get max and min activation to scale the maps automatically
+  var w = draw_grads ? A.dw : A.w;
+  var mm = maxmin(w);
+
+
+  var canv = document.createElement('canvas');
+  canv.className = 'actmap';
+  var W = 7;
+  var H = 12;
+  canv.width = W;
+  canv.height = H;
+  var ctx = canv.getContext('2d');
+  var g = ctx.createImageData(W, H);
+
+  // create the canvas elements, draw and add to DOM
+  // for(var d=0;d<A.depth;d++) {
+    for(var y = 0; y < H; y++){
+    for(var x = 0; x < W; x++){
+      
+        var d = y * W + x;
+    // var x = 0, y = 0;
+    // for(var x=0;x<A.sx;x++) {
+    //   for(var y=0;y<A.sy;y++) {
+        if(draw_grads) {
+          var dval = Math.floor((A.get_grad(0,0,d)-mm.minv)/mm.dv*255);
+        } else {
+          var dval = Math.floor((A.get(0,0,d)-mm.minv)/mm.dv*255);  
+        }
+
+        var dval = Math.floor((Math.min(1, Math.max(-1, A.get(0,0,d))) + 1) / 2 * 255);
+
+        // var dval = Math.floor(*255);  
+
+
+        g.data[4 * d] = g.data[4 * d + 1] = g.data[4 * d + 2] = dval;
+        g.data[4 * d + 3] = 255;
+
+        // for(var dx=0;dx<s;dx++) {
+        //   for(var dy=0;dy<s;dy++) {
+        //     var pp = ((W * (y*s+dy)) + (dx + x*s)) * 4;
+        //     for(var i=0;i<3;i++) { g.data[pp + i] = dval; } // rgb
+        //     g.data[pp+3] = 255; // alpha channel
+        //   }
+        // }
+
+
+
+      }
+    }
+    ctx.putImageData(g, 0, 0);
+    canv.style.width = (7 * scale) + 'px'
+    canv.style.imageRendering = 'pixelated'
+    elt.appendChild(canv);
+  // }  
+}
+
 var visualize_activations = function(net, elt) {
 
   // clear the element
@@ -269,8 +399,12 @@ var visualize_activations = function(net, elt) {
 
   // show activations in each layer
   var N = net.layers.length;
-  for(var i=0;i<N;i++) {
+  for(var i=0;i<N + 1;i++) {
+
     var L = net.layers[i];
+
+        if(i == N) L = net.layers[0]; // there and back again
+
 
     var layer_div = document.createElement('div');
 
@@ -280,8 +414,13 @@ var visualize_activations = function(net, elt) {
     activations_div.appendChild(document.createElement('br'));
     activations_div.className = 'layer_act';
     var scale = 2;
-    if(L.layer_type==='softmax' || L.layer_type==='fc') scale = 10; // for softmax
+    if(L.layer_type==='softmax' || L.layer_type==='fc' || L.layer_type==='regression'){
+    scale = 10; // for softmax
+    draw_image_activations(activations_div, L.out_act, scale);
+  }else{
     draw_activations(activations_div, L.out_act, scale);
+  }
+    
 
     // visualize filters if they are of reasonable size
     if(L.layer_type === 'conv') {
@@ -385,12 +524,30 @@ var test_predict = function() {
     }
     var preds = [];
     
-    for(var k=0;k<aavg.w.length;k++) {
+    // for(var k=0;k<aavg.w.length;k++) {
+    //   preds.push({
+    //     k:k,
+    //     p:aavg.w[k]
+    //   }); 
+    // }
+
+
+    for(var k = 0; k < volumes.length; k++){
+      var s = 0;
+      for(var j = 0; j < 7 * 12; j++){
+        var dval = Math.min(1, Math.max(-1, aavg.w[j]));
+        s += Math.pow(dval - volumes[k].w[j], 2)
+        // s += Math.pow(aavg.w[j] - volumes[k].w[j], 2)
+      }
       preds.push({
-        k:k,
-        p:aavg.w[k]
-      }); 
+        k: k,
+        p: Math.exp(-Math.sqrt(s/(7 * 12)))
+      })
     }
+
+
+
+
     // console.log(preds)
     preds.sort(function(a,b){return a.p<b.p ? 1:-1;});
     
@@ -400,6 +557,9 @@ var test_predict = function() {
     // draw the image into a canvas
     draw_activations(div, xs[0], 2); // draw Vol into canv
 
+    // console.log(aavg)
+    draw_image_activations(div, aavg, 4)
+
     // add predictions
     var probsdiv = document.createElement('div');
     div.className = 'probsdiv';
@@ -407,7 +567,11 @@ var test_predict = function() {
     var t = '';
     for(var k=0;k<Math.min(3, symbols.length);k++) {
       var col = preds[k].k===y ? 'rgb(85,187,85)' : 'rgb(187,85,85)';
-      t += '<div class=\"pp\" style=\"width:' + Math.floor(preds[k].p/n*100) + 'px; margin-left: 60px; background-color:' + col + ';\">' + symbols[preds[k].k] + '</div>'
+      var text = symbols[preds[k].k];
+      if(text == ' ') text = '&nbsp;';
+      // text += '&nbsp;' + (preds[k].p/n).toFixed(5);
+
+      t += '<div class=\"pp\" style=\"width:' + Math.floor(preds[k].p/n*100) + 'px; background-color:' + col + ';\">' + text + '</div>'
     }
     probsdiv.innerHTML = t;
     div.appendChild(probsdiv);
@@ -416,6 +580,32 @@ var test_predict = function() {
     // add it into DOM
     $("#testset_acc").append(div).fadeIn(1000);
   }
+}
+
+
+function getPrediction(){
+  var result = net.layers[net.layers.length - 1].out_act;
+
+  var min = Infinity, pred = 0;
+  for(var k = 0; k < volumes.length; k++){
+      var s = 0;
+      for(var j = 0; j < 7 * 12; j++){
+        
+        var dval = Math.min(1, Math.max(-1, result.w[j]));
+        s += Math.pow(dval - volumes[k].w[j], 2);
+        // s += Math.pow(result.w[j] - volumes[k].w[j], 2)
+
+        
+
+      }
+      if(s < min){
+        min = s;
+        pred = k;
+      }
+  }
+
+  return pred;
+
 }
 
 
@@ -428,13 +618,14 @@ var step_num = 0;
 var step = function(sample) {
 
   var x = sample.x;
-  var y = sample.label;
+  var y = volumes[sample.label].w;
 
   if(sample.isval) {
     // use x to build our estimate of validation error
-    net.forward(x);
-    var yhat = net.getPrediction();
-    var val_acc = yhat === y ? 1.0 : 0.0;
+    net.forward(x)
+    // var yhat = getPrediction();
+    var yhat = getPrediction();
+    var val_acc = yhat === sample.label ? 1.0 : 0.0;
     valAccWindow.add(val_acc);
     return; // get out
   }
@@ -445,8 +636,9 @@ var step = function(sample) {
   var lossw = stats.l2_decay_loss;
 
   // keep track of stats such as the average training error and loss
-  var yhat = net.getPrediction();
-  var train_acc = yhat === y ? 1.0 : 0.0;
+  // var yhat = getPrediction();
+  var yhat = getPrediction();
+  var train_acc = yhat === sample.label ? 1.0 : 0.0;
   xLossWindow.add(lossx);
   wLossWindow.add(lossw);
   trainAccWindow.add(train_acc);

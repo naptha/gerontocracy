@@ -34,7 +34,7 @@ body {
 <canvas id="blah" width="1000" height="200"></canvas>
 <canvas id="crop" width="24" height="24"></canvas>
 <span id="pred"></span>
-<script src="../data2/dec25single-ascii-common-noise-run-52"></script>
+<script src="../data2/dec25single-ascii-common-noise-run-60"></script>
 
 <script src="lodash.js"></script>
 <div id="preout"></div>
@@ -63,7 +63,7 @@ ctx.fillStyle = 'white'
 // ctx.fillText('He who recieves an idea from me receives instruction without lessening mine', 30, 100)
 // ctx.fillText('There\'s a storm coming, Mr. Wayne.', 30, 99)
 
-ctx.fillText('Hello World!', 30, 99)
+ctx.fillText('Hello Darkness my old friend.', 30, 99)
 
 stackBlurCanvasRGBA('blah')
 var book = new Image()
@@ -320,13 +320,15 @@ function P(x){
 		min = x[0],
 		avg = (min / 2 + max / 2);
 
-	if(max - min > 40) return 0;
+	if(max - min > 50) return 0;
 	if(max - min < 2) return 0;
 
 	var err = _.min(ground_truth.map(e => Math.abs(e[0] - (x[0] || 0)) + Math.abs(e[e.length - 1] - x[x.length - 1]) ))
 
 
 	var vol = vanilla(min, max); // like vanilla extract
+
+
 
 	var res = net.forward(vol);
 	var preds = [];
@@ -335,9 +337,19 @@ function P(x){
     preds.sort(function(a,b){return a.p<b.p? 1:-1;});
     	
 
+    var p = preds[0].k == 0 ? 1 - preds[0].p : preds[0].p;
+
+	var img = new Image();
+	img.src = crop.toDataURL('image/png')
+	img.style.margin = '1px'
+
+	img.style.opacity = p;
+	document.getElementById('preout').appendChild(img)	
+
+
     console.log(preds[0].p, trained_symbols[preds[0].k])
 
-    return preds[0].p
+    return Math.pow(p, 1)
 
 
 
@@ -454,10 +466,6 @@ function vanilla(min, max){
 	
 
 
-	var img = new Image();
-	img.src = crop.toDataURL('image/png')
-	img.style.margin = '1px'
-	document.getElementById('preout').appendChild(img)	
 	
 	var p = cropx.getImageData(0, 0, DIM, DIM).data;
 	var x = new convnetjs.Vol(DIM, DIM, 1, 0);

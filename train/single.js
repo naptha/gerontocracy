@@ -1,5 +1,5 @@
-var ascii = ' abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789,.!?():;&%$@#+-=*<>{}[]/\\~"\''.split('');
-var symbols = ascii;
+// var ascii = '_ abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789,.!?():;&%$@#+-=*<>{}[]/\\~"\''.split('');
+// var symbols = ascii;
 
 var ctx = c.getContext('2d')
 var dtx = d.getContext('2d')
@@ -56,8 +56,16 @@ ctx.font = (100 * Math.floor(1 + 7 * Math.random())) + ' ' + size +'px ' + '"' +
 
 var label = Math.floor(symbols.length * Math.random())
 
+
+
+
 // label = symbols.indexOf('M')
-var text = 'ayb';
+var text = symbols[label];
+
+// if(Math.random() < 0.1){
+// 	label = 0;
+// 	text = symbols[Math.floor(symbols.length * Math.random())] + symbols[Math.floor(symbols.length * Math.random())] + symbols[Math.floor(symbols.length * Math.random())]
+// }
 
 var m = ctx.measureText(text);
 ctx.fillStyle = 'black'
@@ -77,11 +85,11 @@ var baseline = 0;
 
 ctx.save()
 // ctx.translate(100, 1.2 * (m.fontBoundingBoxAscent - m.fontBoundingBoxDescent));
-ctx.translate(100, 1.2 * (m.actualBoundingBoxAscent));
+ctx.translate(100, 1.2 * (m.fontBoundingBoxAscent - m.fontBoundingBoxDescent));
 ctx.rotate(r(0.03))
 
 ctx.textAlign = 'center';
-ctx.fillText(symbols[label],  0,              r(0.1));
+ctx.fillText(text,  0,              r(0.1));
 
 
 var edgesub = Math.floor(Math.random() * 4)
@@ -97,11 +105,24 @@ if(size > 60 && edgesub > 0){
 }
 
 ctx.restore()
-var s = 16 / m.actualBoundingBoxAscent
+var s = 16 / (m.fontBoundingBoxAscent)
 dtx.fillStyle = 'black'
 dtx.fillRect(0, 0, d.width, d.height)
 
-dtx.drawImage(c, -100 * s + 12 + r(Math.min(w * s / 6, 22 - w * s)), r(2), c.width * s, c.height * s)	
+dtx.drawImage(c, -100 * s + 12 + r(Math.min(w * s / 6, 22 - w * s)), 4 + r(2), c.width * s, c.height * s)	
+
+
+// if(label == 0){
+// 	dtx.fillStyle = 'black'
+// 	// dtx.fillRect(0, 0, d.width, d.height)
+
+// 	if(Math.random() < 0.3){
+// 		dtx.fillRect(0, 0, Math.random() * 12, 24)
+// 	}
+// 	if(Math.random() < 0.3){
+// 		dtx.fillRect(12 + Math.random() * 12, 0, 24, 24);
+// 	}
+// }
 
 return {
 	data: dtx.getImageData(0, 0, 24, 24),
@@ -123,7 +144,7 @@ function sample_training_instance(){
 	var W = DIM * DIM;
 	for(var i = 0; i < W; i++) {
 		x.w[i] = p[i * 4]/255.0;
-		if(Math.random() < 0.08){
+		if(Math.random() < 0.03){
 			x.w[i] = Math.random();
 		}
 	}
