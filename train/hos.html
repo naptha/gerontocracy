@@ -1,0 +1,720 @@
+
+<script src="jquery-1.8.3.min.js"></script>
+<script src="vis.js"></script>
+<script src="util.js"></script>
+<script src="stackblur.js"></script>
+<script src="../convnet.js"></script>
+
+<style>
+pre {
+	background: white;
+	padding: 10px;
+	border: 1px solid gray;
+}
+canvas {
+	border: 1px solid gray;
+	background: white;
+}
+body {
+	background: whiteSmoke;
+}
+
+#crop {
+	width: 96px;
+	image-rendering: pixelated;
+}
+#blah {
+	background: black;
+}
+#pred {
+	font-size: 150px;
+}
+</style>
+<div id="trainstats"></div>
+<canvas id="lossgraph"></canvas>
+
+<canvas id="blah" width="1100" height="200"></canvas>
+<canvas id="crop" width="24" height="24"></canvas>
+<span id="pred"></span>
+<script src="../data2/dec20windowed-ascii-resized-common-run-35"></script>
+<script src="vis.js"></script>
+<script src="util.js"></script>
+<script src="lodash.js"></script>
+<div id="preout"></div>
+<br>
+<div id="out"></div>
+
+<pre id="info"></pre>
+<script>
+
+var lossGraph = new cnnvis.Graph();
+var xLossWindow = new cnnutil.Window(100);
+var wLossWindow = new cnnutil.Window(100);
+var trainAccWindow = new cnnutil.Window(100);
+var step_num = 0;
+
+net = new convnetjs.Net();
+net.fromJSON(trained_network);
+
+
+
+document.getElementById('info').innerText = JSON.stringify(trained_info, '', '  ')
+var c = document.getElementById('blah')
+var ctx = c.getContext('2d')
+ctx.fillStyle = 'black'
+ctx.fillRect(0, 0, c.width, c.height)
+
+ctx.font = ' 100 45px "Times New Roman"'
+ctx.fillStyle = 'white'
+// ctx.fillText('The white knight approaches.', 30, 100)
+// ctx.fillText('(Dem)ocracy OCR <3 U', 30, 100)
+// ctx.fillText('It matters not how strait the gate, how charged with punishments the scroll', 30, 100)
+// ctx.fillText('IT is a truth universally acknowledged...', 30, 100)
+// ctx.fillText('The Quick Brown Fox Jumps Over Such Lazy Doge.', 30, 100)
+// ctx.fillText('I wish that one day the sun will engulf the world', 30, 100)
+// ctx.fillText('24% Alcohol! $42/oz', 30, 100)
+// ctx.fillText('He who recieves an idea from me receives instruction without lessening mine', 30, 100)
+// ctx.fillText('There\'s a storm coming, Mr. Wayne.', 30, 99)
+
+// ctx.fillText('Hello Darkness my old friend.', 30, 99)
+
+// [26,
+// 60,  // Z
+// 72.5, 86, // O
+// 98, 111, 124, // M
+// 136, 149, // B
+// 161.5, 174, // O
+// 196, // C
+// 208.5, 222, // O
+// 234, 247, 264 // M
+// ]
+
+var ground_truth = [
+[0, 30]
+// [0, 26],
+// [26, 60],  // Z
+// [60, 72.5, 86], // O
+// [86, 98, 111, 124], // M
+// [124, 136, 149], // B
+// [149, 161.5, 174], // O
+// [174, 196], // C
+// [196, 208.5, 222], // O
+// [222, 234, 247, 264] // M
+]
+
+
+var text = 'The best writing is rewriting.';
+var text = "He who lights his taper at mine, recieves light"
+var xoff = 30;
+for(var i = 0; i < text.length; i++){
+	var w = ctx.measureText(text[i]).width;
+	ctx.fillText(text[i], xoff, 99);
+	ground_truth.push([ xoff, xoff + w ]);
+	xoff += w;
+}
+
+// stackBlurCanvasRGBA('blah')
+var crop = document.getElementById('crop')
+var cropx = crop.getContext('2d');
+
+var DIM = 24;
+var shift = 0;
+var scale = 0.5;
+
+// var sharp = ctx.getImageData(0, 50, 800, 70);
+// var data = stackBlurCanvasRGB(ctx.getImageData(0, 50, 800, 70), 20)
+// for(var i = 0; i < sharp.data.length; i++){
+// 	data.data[i] += sharp.data[i]
+// }
+// var output = ctx.createImageData(data.width, data.height)
+
+// var energies = new Uint32Array(data.width * data.height);
+// for(var j = 0; j < data.height; j++){
+// 	for(var i = 1; i < data.width; i++){
+// 		var start = Math.min(energies[j * data.width + i - 1],
+// 					energies[j * data.width + i],
+// 					energies[j * data.width + i + 1]);
+// 		energies[(j + 1) * data.width + i] = start + data.data[4 * (j * data.width + i)];
+// 		output.data[4 * (j * data.width + i)] = energies[(j + 1) * data.width + i] / 10
+// 		output.data[4 * (j * data.width + i) + 3] = 255
+// 	}
+// }
+// ctx.putImageData(output, 0, 0)
+
+var data = ctx.getImageData(0, 50, c.width, 70);
+// var data = stackBlurCanvasRGB(ctx.getImageData(0, 50, 800, 70), 3);
+ctx.putImageData(data, 0, 50)
+
+var book = new Image()
+book.src = c.toDataURL('image/png')
+
+
+var hist = new Uint32Array(data.width)
+for(var i = 0; i < data.width; i++){
+	var s = 0;
+	for(var j = 0; j < data.height; j++) s += data.data[4 * (j * data.width + i)];
+	hist[i] = s;
+	ctx.fillStyle = 'rgba(255, 255, 0, 0.7)'
+	ctx.fillRect(i, 0, 1, Math.sqrt(s) / 3)
+}
+
+var r = 3;
+var list = []
+for(var i = 0; i < hist.length; i++){
+	var min_val = hist[i];
+	var max_val = hist[i];
+	for(var j = Math.max(0, i - r); j < Math.min(hist.length, i + r + 1); j++){
+		min_val = Math.min(min_val, hist[j]);
+		max_val = Math.max(max_val, hist[j]);
+	}
+	// if(hist[i] <= min_val && max_val / min_val > 1.5){
+	if(hist[i] <= min_val && max_val / min_val > 1){
+	// if(hist[i] <= min_val){
+		// console.log(i)
+		list.push(i)
+	}
+}
+
+function array_split(arr, test){
+	if(!test) test = function(a, b) { return a == b };
+	var buf = [arr[0]],
+		groups = [];
+	for(var i = 1; i < arr.length; i++){
+		if(!test(arr[i - 1], arr[i])){
+			if(buf.length) groups.push(buf);
+			buf = [];
+		}
+		buf.push(arr[i])
+	}
+	if(buf.length) groups.push(buf);
+	return groups
+}
+
+var stuff = _.flatten(array_split(list, function(a, b){ return b - a == 1 }).map(function(list){
+	if(list.length <= 3){
+		return [list.reduce(function(a, b){ return a + b }) / list.length]; // the mean of elements
+	}else{
+		return [list[0], list[list.length - 1]]; // first and last elements
+	}
+}));
+
+// stuff = _.flatten(stuff.map(x => [x, x]))
+
+stuff = [0].concat(stuff)
+
+
+
+stuff.forEach(i => {
+	// console.log(i)
+	ctx.fillStyle = '#007fff'
+	ctx.fillRect(i, 0, 1, 100)
+
+})
+console.log(stuff)
+
+
+// this is a javascript port of the viterbi text segmentation
+// thing from aima-python
+
+function viterbi_segment(text, P){
+    /* Find the best segmentation of the string of characters, given the
+       UnigramTextModel P. 
+
+       best[i] = best probability for text[0:i]
+       words[i] = best word ending at position i
+    */
+    var n = text.length,
+    	words = [],
+    	best = [1.0];
+    	// best = [1.0] + [0.0] * n;
+    for(var i = 0; i < n; i++) best[i + 1] = 0;
+    // Fill in the vectors best, words via dynamic programming
+    for(var i = 0; i < n + 1; i++) {
+    	for(var j = 0; j < i; j++){
+            var w = text.slice(j, i);
+
+            if(P(w) * best[i - w.length] >= best[i]){
+                best[i] = P(w) * best[i - w.length]
+                words[i] = w;
+            }
+        }
+    }
+    // Now recover the sequence of best words
+    var sequence = []
+    i = words.length - 1
+    while(i > 0){
+        // sequence[0:0] = [words[i]]
+        sequence.unshift(words[i])
+        i = i - words[i].length
+    }
+    // Return sequence of best words and overall probability
+    return {
+    	s: sequence, 
+    	p: best[best.length - 1]
+    }
+}
+
+
+// function log_viterbi_segment(text, P){
+//     /* Find the best segmentation of the string of characters, given the
+//        UnigramTextModel P. 
+
+//        best[i] = best probability for text[0:i]
+//        words[i] = best word ending at position i
+//     */
+//     var n = text.length,
+//     	// words = [''] + list(text),
+//     	words = [''].concat(text.split('')),
+//     	best = [0];
+//     	// best = [1.0] + [0.0] * n;
+//     for(var i = 0; i < n; i++) best[i + 1] = -Infinity;
+//     // Fill in the vectors best, words via dynamic programming
+//     for(var i = 0; i < n + 1; i++) {
+//     	for(var j = 0; j < i; j++){
+//             var w = text.slice(j, i);
+//             var pw = P(w);
+//             if(pw == 0) continue;
+//             if(Math.log(pw) + best[i - w.length] >= best[i]){
+//                 best[i] = Math.log(pw) + best[i - w.length]
+//                 words[i] = w;
+//             }
+//         }
+//     }
+//     // Now recover the sequence of best words
+//     var sequence = []
+//     i = words.length - 1
+//     while(i > 0){
+//         // sequence[0:0] = [words[i]]
+//         sequence.unshift(words[i])
+//         i = i - words[i].length
+//     }
+//     // Return sequence of best words and overall probability
+//     return {
+//     	s: sequence, 
+//     	p: best[best.length - 1]
+//     }
+// }
+
+
+function memo_viterbi_segment(text, P){
+    /* Find the best segmentation of the string of characters, given the
+       UnigramTextModel P. 
+
+       best[i] = best probability for text[0:i]
+       words[i] = best word ending at position i
+    */
+    var n = text.length,
+    	words = [],
+    	best = [1.0];
+    	// best = [1.0] + [0.0] * n;
+    for(var i = 0; i < n; i++) best[i + 1] = 0;
+    // Fill in the vectors best, words via dynamic programming
+    for(var i = 0; i < n + 1; i++) {
+    	for(var j = 0; j < i; j++){
+            var w = text.slice(j, i);
+            var w = {
+            	arr: text.slice(Math.max(0, j - 1), i),
+            	length: i - j
+            }
+            // console.log(i - j, w.length)
+            // var w = text.slice(Math.max(0, j - 1), i);
+            // var pw = P([text[j - 1]].concat(w));
+            var pw = P(w.arr);
+            // if(pw == 0) continue;
+            if(pw * best[i - w.length] >= best[i]){
+                best[i] = pw * best[i - w.length]
+                // words[i] = [text[j - 1]].concat(w);
+                words[i] = w;
+            }
+        }
+    }
+    // Now recover the sequence of best words
+    var sequence = []
+    i = words.length - 1
+    while(i > 0){
+        // sequence[0:0] = [words[i]]
+        sequence.unshift(words[i].arr)
+        i = i - (words[i].length)
+    }
+    // Return sequence of best words and overall probability
+    return {
+    	s: sequence, 
+    	p: best[best.length - 1]
+    }
+}
+
+
+layer_defs = [];
+layer_defs.push({type:'input', out_sx:4, out_sy:4, out_depth:18});
+// layer_defs.push({type:'conv', sx:5, filters:8, stride:1, pad:2, activation:'relu'});
+// layer_defs.push({type:'pool', sx:2, stride:2});
+// layer_defs.push({type:'conv', sx:5, filters:18, stride:1, pad:2, activation:'relu'});
+// layer_defs.push({type:'pool', sx:5, stride:2});
+//layer_defs.push({type:'fc', num_neurons:20, activation:'sigmoid'});
+// layer_defs.push({type:'regression', num_neurons:7*12});
+layer_defs.push({type:'softmax', num_classes:2});
+
+pokemon = new convnetjs.Net();
+pokemon.makeLayers(layer_defs);
+
+trainer = new convnetjs.SGDTrainer(pokemon, {method:'adadelta', batch_size:20, l2_decay:0.001});
+
+
+function P(x){
+	var max = x[x.length - 1],
+		min = x[0],
+		avg = (min / 2 + max / 2);
+
+	if(max - min > 50) return 0;
+	if(max - min < 2) return 0;
+
+	// var err = _.min(ground_truth.map(e => Math.abs(e[0] - (x[0] || 0)) + Math.abs(e[e.length - 1] - x[x.length - 1]) ))
+
+	var err = (_.min(ground_truth.map(e => {
+		var m_e = e[0] / 2 + e[e.length - 1] / 2,
+			m_x = (x[0] || 0) / 2 + x[x.length - 1] / 2,
+			w_e = e[e.length - 1] - e[0],
+			w_x = x[x.length - 1] - (x[0] || 0);
+		return Math.pow(m_e - m_x, 2) + Math.pow(w_e - w_x, 2)
+		// Math.abs(e[0] - (x[0] || 0)) + Math.abs(e[e.length - 1] - x[x.length - 1]) 
+	})));
+
+
+	var vol = vanilla(min, max); // like vanilla extract
+
+
+	
+	// var preds = [];
+ //    for(var k=0;k<res.w.length;k++)
+	// 	preds.push({ k:k, p:res.w[k] });
+ //    preds.sort(function(a,b){return a.p<b.p? 1:-1;});
+    	
+
+ //    var p = preds[0].k == 0 ? 1 - preds[0].p : preds[0].p;
+
+	var img = new Image();
+	img.src = crop.toDataURL('image/png')
+	img.style.margin = '1px'
+
+	if(err < 20){
+		// yes this is a letter
+		img.style.opacity = 1
+		var y = 1;
+	}else{
+		// no this aint one
+		img.style.opacity = 0.5
+		var y = 0;
+	}
+	// img.style.opacity = Math.exp(-(err)/20);
+	document.getElementById('preout').appendChild(img)	
+
+	var res = net.forward(vol);
+	// train on it with network
+	var stats = trainer.train(net.layers[6].out_act, y);
+	var yhat = pokemon.getPrediction();
+
+
+ var lossx = stats.cost_loss;
+  var lossw = stats.l2_decay_loss;
+
+  // keep track of stats such as the average training error and loss
+  var yhat = net.getPrediction();
+  var train_acc = yhat === y ? 1.0 : 0.0;
+  xLossWindow.add(lossx);
+  wLossWindow.add(lossw);
+  trainAccWindow.add(train_acc);
+
+  // visualize training status
+  var train_elt = document.getElementById("trainstats");
+  train_elt.innerHTML = '';
+  var t = 'Forward time per example: ' + stats.fwd_time + 'ms';
+  train_elt.appendChild(document.createTextNode(t));
+  train_elt.appendChild(document.createElement('br'));
+  var t = 'Backprop time per example: ' + stats.bwd_time + 'ms';
+  train_elt.appendChild(document.createTextNode(t));
+  train_elt.appendChild(document.createElement('br'));
+  var t = 'Classification loss: ' + (xLossWindow.get_average()).toFixed(2);
+  train_elt.appendChild(document.createTextNode(t));
+  train_elt.appendChild(document.createElement('br'));
+  var t = 'L2 Weight decay loss: ' + (wLossWindow.get_average()).toFixed(2);
+  train_elt.appendChild(document.createTextNode(t));
+  train_elt.appendChild(document.createElement('br'));
+  var t = 'Training accuracy: ' + (trainAccWindow.get_average()).toFixed(2);
+  train_elt.appendChild(document.createTextNode(t));
+  train_elt.appendChild(document.createElement('br'));
+  // var t = 'Validation accuracy: ' + (valAccWindow.get_average());
+  // train_elt.appendChild(document.createTextNode(t));
+  // train_elt.appendChild(document.createElement('br'));
+  var t = 'Examples seen: ' + step_num;
+  train_elt.appendChild(document.createTextNode(t));
+  train_elt.appendChild(document.createElement('br'));
+
+  // log progress to graph, (full loss)
+  if(step_num % 200 === 0) {
+    var xa = xLossWindow.get_average();
+    var xw = wLossWindow.get_average();
+    if(xa >= 0 && xw >= 0) { // if they are -1 it means not enough data was accumulated yet for estimates
+      lossGraph.add(step_num, xa + xw);
+      lossGraph.drawSelf(document.getElementById("lossgraph"));
+    }
+  }
+
+  step_num++;
+
+	// console.log(y, yhat)
+
+ //    console.log(preds[0].p, trained_symbols[preds[0].k])
+
+ //    return Math.pow(p, 1)
+
+
+
+	// shift = (avg - 24) * scale
+	// var p = merp()
+	// console.log(p, trained_symbols[net.getPrediction()])
+	// return Math.floor(Math.pow(p, 4) * 100) / 100;
+	// return p;
+
+
+	// var err = ground_truth.map(e => {
+	// 	for(var i = 0, s = 0; i < Math.max(x.length, e.length); i++){
+	// 		s += Math.pow((e[i] || 0) - (x[i] || 0), 2)
+	// 	}
+	// 	return Math.sqrt(s / Math.max(x.length, e.length));
+	// }).sort()[0];
+	// console.log(x, Math.exp(-err))
+	return Math.exp(-err)
+
+
+	// return 0;
+
+
+	// console.log(min, max, x, y)
+
+	// 
+	// 
+
+	// // console.log(min, max)
+
+	// shift = avg * scale
+	// blah()
+	
+	// return Math.random()
+}
+
+var segmentation = memo_viterbi_segment(stuff, P);
+
+console.log(segmentation)
+
+var xvals = segmentation.s.map(function(x, i){
+	var max = x[x.length - 1],
+		min = x[0],
+		avg = (min / 2 + max / 2);
+
+	shift = (avg - 24) * scale
+	blah(vanilla(min, max))
+
+	ctx.fillStyle = 'green'
+	// ctx.fillRect(avg, 0, 1, 50)
+	ctx.fillRect(min, 50 + (i % 2) * 5, max - min, 2)
+
+	return avg
+})
+
+console.log(xvals)
+
+
+// var r = 1;
+// for(var i = r; i < data.width - r; i++){
+// 	var s = 0;
+// 	for(var d = -r; d < r; d++){
+// 		// s += hist[i + d]
+// 		s = Math.max(s, hist[i + d])
+// 	}
+// 	// if(hist[i] == s && s > 0){
+// 	// 	ctx.fillStyle = 'red'	
+// 	// 	ctx.fillRect(i, 0, 1, 20)
+// 	// 	shift = i * scale
+// 	// 	blah()
+// 	// }
+// 	ctx.fillStyle = 'red'
+// 	ctx.fillRect(i, 0, 1, s / (r * 2 + 1) / 30)
+// }
+
+
+
+
+
+// ctx.putImageData(data, 0, 0)
+
+function extract(){
+	cropx.fillRect(0, 0, 24, 24)
+	cropx.drawImage(book, -shift, -30, c.width * scale, c.height * scale)
+	// var t = cropx.getImageData(0, 0, DIM, DIM);
+	// for(var i = 0; i < t.data.length; i++){
+	// 	t.data[i] = Math.min(255, t.data[i] * 1.8)
+	// }
+	// cropx.putImageData(t, 0, 0)
+	var p = cropx.getImageData(0, 0, DIM, DIM).data;
+	var x = new convnetjs.Vol(DIM, DIM, 1, 0);
+	var W = DIM * DIM;
+	for(var i = 0; i < W; i++) {
+		x.w[i] = p[i * 4] / 255.0;
+	}
+	return x;
+}
+
+
+function vanilla(min, max){
+	cropx.fillRect(0, 0, 24, 24)
+	
+	var width = max - min;
+
+	cropx.drawImage(book, 
+		min, 60, 
+		width, 24 / scale, 
+		(24 - width * scale) / 2, 0, 
+		width * scale, 24);
+	
+	// context.drawImage(img,sx,sy,swidth,sheight,x,y,width,height);
+
+	// cropx.drawImage(book, -shift, -30, c.width * scale, c.height * scale)
+	
+
+
+	
+	var p = cropx.getImageData(0, 0, DIM, DIM).data;
+	var x = new convnetjs.Vol(DIM, DIM, 1, 0);
+	var W = DIM * DIM;
+	for(var i = 0; i < W; i++) {
+		x.w[i] = p[i * 4] / 255.0;
+	}
+	return x;
+}
+
+function merp(){
+	// var result = net.forward(extract());
+	// for(var i = 0, sum = 0; i < result.w.length; i++){
+	// 	sum += result.w[i]
+	// }
+
+	var sx = extract()
+	// forward prop it through the network
+    var aavg = new convnetjs.Vol(1,1,trained_symbols.length,0.0);
+    // ensures we always have a list, regardless if above returns single item or list
+    var xs = [].concat(sx);
+    var n = xs.length;
+    for(var i=0;i<n;i++) {
+      var a = net.forward(xs[i]);
+      aavg.addFrom(a);
+    }
+    var preds = [];
+    
+    for(var k=0;k<aavg.w.length;k++) {
+      preds.push({
+        k:k,
+        p:aavg.w[k]
+      }); 
+    }
+    // console.log(preds)
+    preds.sort(function(a,b){return a.p<b.p ? 1:-1;});
+
+
+	// console.log(preds)
+
+	var pred = trained_symbols[net.getPrediction()];
+	
+	ctx.fillStyle = 'red'
+	ctx.fillRect(shift / scale + 24 - 1.5, 30, 3, 20 * (preds[0].p))
+
+	// ctx.font = '13px "Lato"'
+	// ctx.fillStyle = 'rgba(255, 255, 255, ' + preds[0].p + ')'
+ //    ctx.fillText(pred, shift / scale + 24, 120 + (shift % 5) * 10 )
+	// document.getElementById('pred').innerText = pred;
+
+	var img = new Image();
+	img.src = crop.toDataURL('image/png')
+	// document.body.appendChild(img)
+	var d = document.createElement('span')
+	d.style.opacity = preds[0].p;
+	d.appendChild(document.createTextNode(pred))
+	d.appendChild(img)
+	// if(preds[0].p > 0.5){
+		document.getElementById('preout').appendChild(d)	
+	// }
+	return preds[0].p
+}
+
+
+function blah(sx){
+	// var result = net.forward(extract());
+	// for(var i = 0, sum = 0; i < result.w.length; i++){
+	// 	sum += result.w[i]
+	// }
+	// forward prop it through the network
+    var aavg = new convnetjs.Vol(1,1,trained_symbols.length,0.0);
+    // ensures we always have a list, regardless if above returns single item or list
+    var xs = [].concat(sx);
+    var n = xs.length;
+    for(var i=0;i<n;i++) {
+      var a = net.forward(xs[i]);
+      aavg.addFrom(a);
+    }
+    var preds = [];
+    
+    for(var k=0;k<aavg.w.length;k++) {
+      preds.push({
+        k:k,
+        p:aavg.w[k]
+      }); 
+    }
+    // console.log(preds)
+    preds.sort(function(a,b){return a.p<b.p ? 1:-1;});
+
+
+	// console.log(preds)
+
+	var pred = trained_symbols[net.getPrediction()];
+	
+	ctx.fillStyle = 'red'
+	ctx.fillRect(shift / scale + 24, 0, 1, 10 * (preds[0].p))
+
+	ctx.font = '13px "Lato"'
+	ctx.fillStyle = 'rgba(255, 255, 255, ' + preds[0].p + ')'
+    ctx.fillText(pred, shift / scale + 24, 120 + (shift % 5) * 10 )
+	document.getElementById('pred').innerText = pred;
+
+	var img = new Image();
+	img.src = crop.toDataURL('image/png')
+	// document.body.appendChild(img)
+	var d = document.createElement('span')
+	d.style.opacity = preds[0].p;
+	d.appendChild(document.createTextNode(pred))
+	d.appendChild(img)
+	// if(preds[0].p > 0.5){
+		document.getElementById('out').appendChild(d)	
+	// }
+	
+}
+
+// blah()
+
+// setTimeout(function(){
+// 	// ocr400: 2117.558ms
+// 	// ocrfast: 1774.457ms
+// 	console.time("ocrfast")
+// 	while(shift++ < 400){
+// 		blahfast()
+// 	}
+// 	console.timeEnd("ocrfast")
+// }, 100)
+// setInterval(function(){
+// 	if(shift < 400){
+// 		shift++
+// 		blah()	
+// 	}
+// }, 10)
+// net.forward(vol)
+// blah += trained_symbols[net.getPrediction()][0]	
+extract()
+</script>

@@ -1,7 +1,7 @@
 trained_info = {
   "name": "rbf-ascii-common-noise-run-109",
   "examples_seen": 182377,
-  "age_minutes": 56.119733333333336,
+  "age_minutes": 304.24726666666663,
   "train_accuracy": 0.68,
   "validation_accuracy": 0.74
 };

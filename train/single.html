@@ -184,7 +184,7 @@ for(var i = 0; i < symbols.length; i++){
     for(var b = 0; b < 7; b++){
       var n = a * 7 + b;
       if(things.data[4 * n] > 128){
-        netx.w[n] = -1
+        netx.w[n] = 0
       }else{
         netx.w[n] = 1
       }
@@ -365,7 +365,9 @@ var draw_image_activations = function(elt, A, scale, grads) {
           var dval = Math.floor((A.get(0,0,d)-mm.minv)/mm.dv*255);  
         }
 
-        var dval = Math.floor((Math.min(1, Math.max(-1, A.get(0,0,d))) + 1) / 2 * 255);
+        // var dval = Math.floor((Math.min(1, Math.max(-1, A.get(0,0,d))) + 1) / 2 * 255);
+
+        var dval = Math.floor((Math.min(1, Math.max(0, A.get(0,0,d)))) * 255);
 
         // var dval = Math.floor(*255);  
 
@@ -498,8 +500,9 @@ var visualize_activations = function(net, elt) {
 var paused = false;
 var load_and_step = function() {
   if(paused) return; 
-
+  var tGenerate = Date.now()
   var sample = sample_training_instance();
+  genAccWindow.add(Date.now() - tGenerate)
   step(sample); // process this image
 }
 
@@ -614,8 +617,15 @@ var xLossWindow = new cnnutil.Window(100);
 var wLossWindow = new cnnutil.Window(100);
 var trainAccWindow = new cnnutil.Window(100);
 var valAccWindow = new cnnutil.Window(100);
+var genAccWindow = new cnnutil.Window(100);
+var timeAccWindow = new cnnutil.Window(100);
 var step_num = 0;
+
+var lastStep = Date.now();
 var step = function(sample) {
+  
+  timeAccWindow.add(Date.now() - lastStep)
+  lastStep = Date.now();
 
   var x = sample.x;
   var y = volumes[sample.label].w;
@@ -635,13 +645,18 @@ var step = function(sample) {
   var lossx = stats.cost_loss;
   var lossw = stats.l2_decay_loss;
 
-  // keep track of stats such as the average training error and loss
-  // var yhat = getPrediction();
-  var yhat = getPrediction();
-  var train_acc = yhat === sample.label ? 1.0 : 0.0;
+  if(Math.random() < 0.1){
+    // keep track of stats such as the average training error and loss
+    // var yhat = getPrediction();
+    var yhat = getPrediction();
+    var train_acc = yhat === sample.label ? 1.0 : 0.0;
+    trainAccWindow.add(train_acc);
+  }
+  
+  
+
   xLossWindow.add(lossx);
   wLossWindow.add(lossw);
-  trainAccWindow.add(train_acc);
 
   // visualize training status
   var train_elt = document.getElementById("trainstats");
@@ -655,6 +670,15 @@ var step = function(sample) {
   var t = 'Classification loss: ' + f2t(xLossWindow.get_average());
   train_elt.appendChild(document.createTextNode(t));
   train_elt.appendChild(document.createElement('br'));
+  
+  var t = 'Time per step: ' + (timeAccWindow.get_average().toFixed(0)+'ms');
+  train_elt.appendChild(document.createTextNode(t));
+  train_elt.appendChild(document.createElement('br'));
+
+  var t = 'Time to generate: ' + (genAccWindow.get_average().toFixed(0)+'ms');
+  train_elt.appendChild(document.createTextNode(t));
+  train_elt.appendChild(document.createElement('br'));
+
   var t = 'L2 Weight decay loss: ' + f2t(wLossWindow.get_average());
   train_elt.appendChild(document.createTextNode(t));
   train_elt.appendChild(document.createElement('br'));
